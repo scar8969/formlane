@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · formbackend{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<p class="sub">Static HTML forms backed by a small Flask + SQLite service.</p>
+
+<div class="grid">
+  <div class="stat"><div class="k">Forms</div><div class="v">{{ stats.forms }}</div></div>
+  <div class="stat"><div class="k">Submissions</div><div class="v">{{ stats.submissions }}</div></div>
+  <div class="stat"><div class="k">Spam blocked</div><div class="v">{{ stats.spam }}</div></div>
+  <div class="stat"><div class="k">Delivered</div><div class="v">{{ stats.delivered }}</div></div>
+</div>
+
+{% if not stats.forms %}
+<div class="warnbox" style="margin-bottom:16px">
+  A form with no delivery target accepts submissions but stores them only. Configure <span class="mono">email</span> or <span class="mono">webhook</span> with <span class="mono">python cli.py add-form NAME --webhook URL</span> to forward them.
+</div>
+{% endif %}
+
+<div class="panel">
+  <div class="hd">
+    <h2>Forms</h2>
+    <span class="row" style="margin-left:auto">
+      <a class="btn q" href="{{ url_for('new_form') }}">New form</a>
+      <a class="btn q" href="{{ url_for('submissions') }}">All submissions</a>
+    </span>
+  </div>
+  <div class="bd" style="padding:0">
+    {% if forms %}
+    <table>
+      <tr><th>#</th><th>Name</th><th>Endpoint</th><th>Submissions</th><th>Spam</th><th>Delivery</th><th>Actions</th></tr>
+      {% for f in forms %}
+      <tr>
+        <td>{{ f.id }}</td>
+        <td>{{ f.name or '(unnamed)' }}</td>
+        <td>
+          <div class="code">POST {{ url_for('forms.submit', token=f.token, _external=True) }}</div>
+        </td>
+        <td>{{ f.sub_count }}</td>
+        <td>{% if f.spam_count %}<span class="pill no">{{ f.spam_count }}</span>{% else %}0{% endif %}</td>
+        <td>
+          {% if f.delivery %}<span class="pill">{{ f.delivery }}</span>
+          {% else %}<span class="pill w">store only</span>{% endif %}
+        </td>
+        <td><a class="btn q" href="{{ url_for('submissions', form=f.id) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No forms yet. <a class="btn" href="{{ url_for('new_form') }}" style="margin-left:6px">Create the first one</a></p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="hd"><h2>Embed a form</h2></div>
+  <div class="bd">
+    <p class="sub" style="margin-bottom:10px">Point any HTML form at the endpoint above; every submitted field is stored as JSON.</p>
+    <div class="code">&lt;form method="post" action="{{ endpoint_example }}"&gt;
+  &lt;input name="email" type="email" required&gt;
+  &lt;textarea name="message"&gt;&lt;/textarea&gt;
+  &lt;input type="text" name="_hp" style="display:none"&gt;   &lt;!-- honeypot, when configured --&gt;
+  &lt;button type="submit"&gt;Send&lt;/button&gt;
+&lt;/form&gt;</div>
+  </div>
+</div>
+{% endblock %}

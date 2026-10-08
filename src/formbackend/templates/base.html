@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}formbackend{% endblock %}</title>
+<style>
+:root{--bg:#101312;--panel:#171c1a;--line:#26302c;--ink:#e9f0ec;--dim:#87988f;--accent:#38c68f;--ok:#4fd18b;--no:#ef7674;--warn:#e8b04b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;min-height:100vh}
+.top{display:flex;align-items:center;gap:16px;padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top .brand{font-weight:700;color:var(--accent);text-decoration:none}
+.top nav{display:flex;gap:14px}
+.top nav a{color:var(--dim);text-decoration:none;padding:3px 0;border-bottom:2px solid transparent}
+.top nav a.on,.top nav a:hover{color:var(--ink);border-bottom-color:var(--accent)}
+.top .bar{margin-left:auto}
+main{flex:1;width:100%;max-width:1120px;margin:0 auto;padding:22px}
+h1{font-size:20px;margin-bottom:3px}
+p.sub{color:var(--dim);margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim)}
+.stat .v{font-size:26px;font-weight:700;margin-top:4px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;margin-bottom:16px}
+.panel .hd{padding:10px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel .hd h2{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim)}
+.panel .bd{padding:15px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid #1d2422;vertical-align:top}
+tr:last-child td{border-bottom:0}
+input,select,textarea{background:#0b0f0e;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:7px 10px;font:inherit;font-size:13px}
+.btn{background:var(--accent);color:#04241a;border:0;border-radius:6px;padding:7px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{filter:brightness(1.08)}
+.btn.q{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500}
+.pill{display:inline-block;border-radius:10px;padding:1px 9px;font-size:11px;background:rgba(56,198,143,.14);color:var(--accent)}
+.pill.no{background:rgba(239,118,116,.14);color:var(--no)}
+.pill.w{background:rgba(232,176,75,.14);color:var(--warn)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row form{display:flex;gap:6px;align-items:center;margin:0}
+.flash{padding:10px 15px;border-radius:7px;margin-bottom:16px;font-size:13px}
+.flash.error{background:rgba(239,118,116,.12);border:1px solid var(--no);color:var(--no)}
+.flash.success,.flash.message{background:rgba(79,209,139,.12);border:1px solid var(--ok);color:var(--ok)}
+.empty{color:var(--dim);padding:16px 15px}
+.code{background:#0b0f0e;border:1px solid var(--line);border-radius:6px;padding:9px 11px;font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all;margin-top:7px}
+.warnbox{border:1px solid var(--warn);background:rgba(232,176,75,.08);color:var(--warn);border-radius:7px;padding:12px 15px;font-size:13px}
+footer{padding:14px 22px;border-top:1px solid var(--line);color:var(--dim);font-size:12px;text-align:center}
+footer a{color:var(--dim)}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.tag{display:inline-block;background:rgba(56,198,143,.13);color:var(--accent);border-radius:10px;padding:1px 9px;font-size:11px;text-decoration:none}
+.tag.on{background:var(--accent);color:#04241a}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="{{ url_for('index') }}">📬 formbackend</a>
+  <nav>
+    <a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} class="on"{% endif %}>Dashboard</a>
+    <a href="{{ url_for('submissions') }}"{% if request.endpoint == 'submissions' %} class="on"{% endif %}>Submissions</a>
+    <a href="{{ url_for('forms.list_forms') }}">JSON API</a>
+  </nav>
+  <div class="bar"><a class="btn" href="{{ url_for('new_form') }}">New form</a></div>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer>formbackend · {{ stats.forms }} form(s) · {{ stats.submissions }} submission(s) stored · <a href="{{ url_for('health') }}">/api/health</a></footer>
+</body>
+</html>

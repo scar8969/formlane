@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Submissions · formbackend{% endblock %}
+{% block content %}
+<h1>Submissions</h1>
+<p class="sub">{{ submissions|length }} of {{ stats.submissions }} stored submission(s){% if form_id %} for form #{{ form_id }}{% endif %}.</p>
+
+<div class="panel">
+  <div class="hd">
+    <h2>Recent submissions</h2>
+    <span class="row" style="margin-left:auto">
+      <a class="btn q" href="{{ url_for('submissions') }}">All forms</a>
+      {% for f in forms %}
+        <a class="tag{% if form_id == f.id %} on{% endif %}" href="{{ url_for('submissions', form=f.id) }}">{{ f.name or ('form #' ~ f.id) }} · {{ f.sub_count }}</a>
+      {% endfor %}
+    </span>
+  </div>
+  <div class="bd" style="padding:0">
+    {% if submissions %}
+    <table>
+      <tr><th>#</th><th>Form</th><th>Received</th><th>Fields</th><th>State</th><th>IP</th></tr>
+      {% for s in submissions %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ form_names.get(s.form_id, 'form #' ~ (s.form_id or '?')) }}</td>
+        <td class="mono">{{ s.at.strftime('%Y-%m-%d %H:%M:%S') if s.at else '—' }}</td>
+        <td><div class="code">{{ s.fields_json }}</div></td>
+        <td>
+          {% if s.spam %}<span class="pill no">spam</span>{% else %}<span class="pill">accepted</span>{% endif %}
+          {% if s.delivered %}<span class="pill">delivered</span>{% else %}<span class="pill w">not delivered</span>{% endif %}
+        </td>
+        <td class="mono">{{ s.ip or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No submissions stored yet{% if form_id %} for this form{% endif %}.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

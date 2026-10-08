@@ -1,0 +1,29 @@
+openapi: 3.0.0
+info:
+  title: "📬 formbackend"
+  version: 0.1.0
+paths:
+  /f/<token>:
+    post:
+      summary: submit
+      responses:
+        "200":
+          description: ok
+  /api/forms:
+    get:
+      summary: list
+      responses:
+        "200":
+          description: ok
+  /api/forms:
+    post:
+      summary: create
+      responses:
+        "200":
+          description: ok
+  /api/forms/<id>/submissions:
+    get:
+      summary: submissions
+      responses:
+        "200":
+          description: ok

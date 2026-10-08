@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}New form · formbackend{% endblock %}
+{% block content %}
+<h1>New form</h1>
+<p class="sub">A form is identified by an unguessable token used in its submission URL.</p>
+
+<div class="panel">
+  <div class="hd"><h2>Create</h2></div>
+  <div class="bd">
+    <form method="post" action="{{ url_for('new_form') }}">
+      <div class="row">
+        <input type="text" name="name" required placeholder="contact" style="flex:1;min-width:220px">
+        <input type="email" name="email" placeholder="deliver to e-mail (optional)">
+        <input type="url" name="webhook" placeholder="deliver to webhook (optional)" style="min-width:240px">
+      </div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" name="honeypot" placeholder="honeypot field name (optional)">
+        <input type="text" name="keywords" placeholder="spam keywords, comma separated (optional)">
+        <button class="btn" type="submit">Create form</button>
+      </div>
+      <p class="url" style="color:var(--dim);margin-top:8px">
+        e-mail delivery needs <span class="mono">SMTP_HOST</span>/<span class="mono">SMTP_PORT</span>/<span class="mono">SMTP_USER</span>/<span class="mono">SMTP_PASS</span>/<span class="mono">SMTP_FROM</span>; a webhook receives the stored fields as a JSON POST. Without either, submissions are stored and marked <span class="mono">not delivered</span>.
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}
