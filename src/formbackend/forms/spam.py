@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Any
 
 
 def is_spam(form, request, fields):
@@ -24,4 +25,4 @@ def is_spam(form, request, fields):
     return False
 
 
-_hits = {}
+_hits: dict[str, Any] = {}

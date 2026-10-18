@@ -1,5 +1,6 @@
 import json
 import secrets
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 
@@ -9,7 +10,7 @@ from .endpoints import capture, get_form
 from .spam import is_spam
 
 bp = Blueprint("forms", __name__)
-_hits = {}
+_hits: dict[str, Any] = {}
 
 
 @bp.post("/f/<token>")

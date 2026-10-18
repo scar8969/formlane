@@ -90,7 +90,7 @@ def build_app():
             if not name:
                 flash("A form name is required.", "error")
                 return redirect(url_for("new_form"))
-            deliver = {}
+            deliver: dict[str, object] = {}
             email = (request.form.get("email") or "").strip()
             webhook = (request.form.get("webhook") or "").strip()
             if email:
@@ -102,7 +102,7 @@ def build_app():
                 }
             if webhook:
                 deliver["webhook"] = webhook
-            spam = {}
+            spam: dict[str, object] = {}
             if request.form.get("honeypot"):
                 spam["honeypot"] = True
             keywords = [
