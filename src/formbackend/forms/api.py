@@ -1,16 +1,16 @@
-import secrets
-
-from .deliver import deliver_email, deliver_webhook
-from .endpoints import capture, get_form
-from .spam import is_spam
-from ..models import Form, Submission, db
-
 import json
+import secrets
 
 from flask import Blueprint, jsonify, request
 
+from ..models import Form, Submission, db
+from .deliver import deliver_email, deliver_webhook
+from .endpoints import capture, get_form
+from .spam import is_spam
+
 bp = Blueprint("forms", __name__)
 _hits = {}
+
 
 @bp.post("/f/<token>")
 def submit(token):
@@ -30,11 +30,23 @@ def submit(token):
     db.session.commit()
     return jsonify({"status": "received", "id": sub.id})
 
+
 @bp.get("/api/forms")
 def list_forms():
-    return jsonify({"forms": [{"id": f.id, "name": f.name, "token": f.token,
-                               "submissions": Submission.query.filter_by(form_id=f.id).count()}
-                              for f in Form.query.all()]})
+    return jsonify(
+        {
+            "forms": [
+                {
+                    "id": f.id,
+                    "name": f.name,
+                    "token": f.token,
+                    "submissions": Submission.query.filter_by(form_id=f.id).count(),
+                }
+                for f in Form.query.all()
+            ]
+        }
+    )
+
 
 @bp.post("/api/forms")
 def add_form():
@@ -42,16 +54,30 @@ def add_form():
     # deliver_json/spam_json are read back with json.loads by deliver/spam, so
     # they have to be JSON text -- str(dict) produces a Python repr that only
     # looks similar and makes every delivery silently fail.
-    f = Form(token=secrets.token_urlsafe(6), name=d.get("name", ""),
-             deliver_json=json.dumps(d.get("deliver") or {}),
-             spam_json=json.dumps(d.get("spam") or {}))
+    f = Form(
+        token=secrets.token_urlsafe(6),
+        name=d.get("name", ""),
+        deliver_json=json.dumps(d.get("deliver") or {}),
+        spam_json=json.dumps(d.get("spam") or {}),
+    )
     db.session.add(f)
     db.session.commit()
     return jsonify({"id": f.id, "token": f.token})
 
+
 @bp.get("/api/forms/<int:fid>/submissions")
 def submissions(fid):
-    rows = [{"id": s.id, "fields": s.fields_json, "spam": bool(s.spam),
-             "delivered": bool(s.delivered), "at": s.at.isoformat() if s.at else ""}
-            for s in Submission.query.filter_by(form_id=fid).order_by(Submission.id.desc()).limit(100).all()]
+    rows = [
+        {
+            "id": s.id,
+            "fields": s.fields_json,
+            "spam": bool(s.spam),
+            "delivered": bool(s.delivered),
+            "at": s.at.isoformat() if s.at else "",
+        }
+        for s in Submission.query.filter_by(form_id=fid)
+        .order_by(Submission.id.desc())
+        .limit(100)
+        .all()
+    ]
     return jsonify({"submissions": rows})

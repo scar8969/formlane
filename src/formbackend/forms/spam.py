@@ -1,4 +1,6 @@
-import json, time
+import json
+import time
+
 
 def is_spam(form, request, fields):
     try:
@@ -20,5 +22,6 @@ def is_spam(form, request, fields):
         ts.append(now)
         _hits[key] = ts
     return False
+
 
 _hits = {}

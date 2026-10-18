@@ -1,5 +1,8 @@
-import json, smtplib, urllib.request
+import json
+import smtplib
+import urllib.request
 from email.message import EmailMessage
+
 
 def deliver_email(form, sub):
     cfg = _config(form, "email", {})
@@ -17,17 +20,23 @@ def deliver_email(form, sub):
     except Exception:
         return False
 
+
 def deliver_webhook(form, sub):
     url = _config(form, "webhook", "")
     if not url:
         return False
     try:
-        req = urllib.request.Request(url, data=sub.fields_json.encode(), method="POST",
-                                     headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url,
+            data=sub.fields_json.encode(),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
         with urllib.request.urlopen(req, timeout=10) as r:
             return r.status < 400
     except Exception:
         return False
+
 
 def deliver_slack(form, sub):
     url = _config(form, "slack", "")
@@ -35,11 +44,14 @@ def deliver_slack(form, sub):
         return False
     try:
         payload = json.dumps({"text": f"New submission: {sub.fields_json}"}).encode()
-        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url, data=payload, headers={"Content-Type": "application/json"}
+        )
         with urllib.request.urlopen(req, timeout=10) as r:
             return r.status < 400
     except Exception:
         return False
+
 
 def _config(form, key, default=""):
     try:

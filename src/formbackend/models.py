@@ -1,7 +1,9 @@
 from datetime import datetime
+
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
 
 class Form(db.Model):
     __tablename__ = "forms"
@@ -11,6 +13,7 @@ class Form(db.Model):
     deliver_json = db.Column(db.Text, default="{}")
     spam_json = db.Column(db.Text, default="{}")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Submission(db.Model):
     __tablename__ = "submissions"
