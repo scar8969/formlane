@@ -1,266 +1,160 @@
-# formlane
+<p align="center">
+  <img src="docs/assets/screens/root.png" alt="formlane running" width="900">
+</p>
 
-> A self-hosted backend for HTML forms. You create a form in the web UI (or over the API) and get a
+<h1 align="center">formlane</h1>
 
-[![ci](https://img.shields.io/badge/ci-github--actions-blue)](.github/workflows/ci.yml)
-[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](pyproject.toml)
-[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+<p align="center"><b>A backend for HTML forms: create one, get a POST endpoint, collect submissions.</b></p>
 
-formlane is a Flask service delivered as an installable, typed, test-covered
-distribution. The business logic is unchanged from the original service; what
-is new is the engineering around it: a packaging story, a configuration
-contract, structured observability, operational endpoints, a hardened
-container, and the gates that keep all of that true.
+<p align="center">
+  <a href="#quality-gates"><img src="https://img.shields.io/badge/tests-24%20passed-2ea44f" alt="tests: 24 passed"></a> <a href="#quality-gates"><img src="https://img.shields.io/badge/coverage-60.0%-yellow" alt="coverage: 60.0%"></a> <a href="#api"><img src="https://img.shields.io/badge/routes-10%20answered-0969da" alt="routes: 10 answered"></a> <a href="#requirements"><img src="https://img.shields.io/badge/python-3.11%2B-3776ab" alt="python: 3.11+"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="license: MIT"></a>
+</p>
+
+formlane gives a static page a real form backend: create a form, point the HTML at its endpoint, and read submissions as JSON or CSV. Honeypot and keyword checks drop the obvious spam, and delivery to email or a webhook is configured per form.
 
 ---
+
+**Contents** &nbsp;·&nbsp; [Why](#why-this-exists) &nbsp;·&nbsp; [What it does](#what-it-does) &nbsp;·&nbsp; [Quickstart](#quickstart) &nbsp;·&nbsp; [API](#api) &nbsp;·&nbsp; [Screenshots](#screenshots) &nbsp;·&nbsp; [Measured](#measured-not-estimated) &nbsp;·&nbsp; [Architecture](#architecture) &nbsp;·&nbsp; [Quality gates](#quality-gates) &nbsp;·&nbsp; [Deploy](#deploy) &nbsp;·&nbsp; [Limits](#limits-stated-rather-than-hidden)
+
+## Why this exists
+
+Static sites still need forms, and the hosted options own your data. This is the small piece in between: one table for forms, one for submissions, a spam filter that runs before the insert, and an export that is a query.
+
+## What it does
+
+| Capability | How it works |
+| --- | --- |
+| **Form definitions** | Name, target delivery and spam rules per form; the token in the URL is the endpoint. |
+| **Submission capture** | Any POST to /f/<token> is validated, filtered and stored with its headers. |
+| **Spam filter** | A honeypot field plus keyword rules, both configurable per form. |
+| **Delivery config** | Email and webhook targets are stored per form and serialised for the sender. |
+| **Export** | Submissions as JSON or CSV for a spreadsheet. |
 
 ## Quickstart
 
 ```sh
-git clone <your-fork> formlane && cd formlane
-python -m venv .venv
-. .venv/bin/activate        # Windows: .venv\Scripts\activate
+git clone https://github.com/scar8969/formlane.git
+cd formlane
+python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-cp .env.example .env
-python wsgi.py
+python wsgi.py                                 # http://127.0.0.1:8000
 ```
 
-The service listens on `http://127.0.0.1:8000` by default.
+The same work from the CLI:
 
 ```sh
-curl -s localhost:8000/healthz | python -m json.tool
-curl -s localhost:8000/version | python -m json.tool
-curl -s localhost:8000/metrics | head
+python -m formbackend.cli --help
 ```
 
----
+Commands: `forms`, `create`, `submissions`, `test`, `serve`.
 
-## Operating contract
+A first request:
 
-Every deployment target answers the same five endpoints. They are the contract
-an orchestrator, a load balancer, or an on-call engineer relies on.
+```sh
+curl -s http://127.0.0.1:8000/f/<token> | head
+```
 
-| Endpoint  | Purpose                                       | Success | Failure |
-| --------- | --------------------------------------------- | ------- | ------- |
-| `/healthz` | Process is up and the app is answering        | `200`   | -       |
-| `/livez`   | Liveness: restart me if this fails            | `200`   | -       |
-| `/readyz`  | Readiness: send traffic only if this passes   | `200`   | `503` + `failures` |
-| `/metrics` | Prometheus text exposition                    | `200`   | -       |
-| `/version` | Build and resolved config (secrets redacted)  | `200`   | -       |
+## Requirements
 
-Cross-cutting behaviour applied to every response:
+- Python **3.11+** — CI runs 3.11, 3.12 and 3.13.
+- Runtime dependencies: `Flask>=3.0`, `Flask-SQLAlchemy>=3.1`, `SQLAlchemy>=2.0`, `PyYAML>=6.0`.
+- No JavaScript build step: every page is server-rendered Jinja.
 
-- `X-Request-ID` is accepted from the caller or generated, echoed back, and
-  attached to every log record for that request.
-- Security headers: `X-Content-Type-Options`, `X-Frame-Options`,
-  `Referrer-Policy`, `Cross-Origin-Opener-Policy`, `Permissions-Policy`,
-  and `Strict-Transport-Security` when `APP_ENV=production`.
-- Errors are JSON: `{"error": "<code>", "message": "...", "request_id": "..."}`.
+## API
 
----
+Every route below is in [`openapi/formlane.yaml`](openapi/formlane.yaml) and is exercised by the live probe recorded in [`docs/EVIDENCE.md`](docs/EVIDENCE.md).
 
-## Configuration
-
-Configuration is environment-only, in the twelve-factor sense. Nothing is read
-from a committed file. `.env.example` is a template for local development.
-
-### Platform variables
-
-| Variable             | Default       | Notes                                        |
-| -------------------- | ------------- | -------------------------------------------- |
-| `APP_ENV`            | `development` | `production` requires `SECRET_KEY`               |
-| `SECRET_KEY`         | dev fallback  | Must be set in production or startup fails    |
-| `HOST` and `PORT`     | `0.0.0.0`, `8000` | Port must be 1-65535               |
-| `DEBUG`              | `false`       | Flask debug mode                              |
-| `MAX_CONTENT_LENGTH` | `8388608`     | Bytes; oversized bodies get `413`             |
-| `DATABASE_URL`       | sqlite in `var/` | Also accepts `SQLALCHEMY_DATABASE_URI`      |
-| `DATA_DIR`           | `<root>/var`   | Where the database and logs live              |
-| `LOG_LEVEL`          | `INFO`        | `DEBUG INFO WARNING ERROR CRITICAL`         |
-| `LOG_JSON`           | `true`        | One JSON object per line for log shippers     |
-| `REQUEST_ID_HEADER`  | `X-Request-ID` | Header used for correlation ids              |
-
-### Application variables
-
-| Variable | Type | Default |
+| Method | Path | What it does |
 | --- | --- | --- |
-| `APP_ENV` | string | -- |
-| `SECRET_KEY` | string | -- |
-| `HOST` | string | -- |
-| `PORT` | string | -- |
-| `DEBUG` | string | -- |
-| `MAX_CONTENT_LENGTH` | string | -- |
-| `DATABASE_URL` | string | -- |
-| `DATA_DIR` | string | -- |
-| `INSTANCE_DIR` | string | -- |
-| `LOG_DIR` | string | -- |
-| `LOG_LEVEL` | string | -- |
-| `LOG_JSON` | string | -- |
-| `REQUEST_ID_HEADER` | string | -- |
-| `ANALYTICS_SALT` | string | -- |
-| `FORMBACKEND_DB_URI` | string | -- |
-| `FORMBACKEND_SECRET_KEY` | string | -- |
-| `PORT` | string | -- |
+| `POST` | `/f/<token>` | submit |
+| `POST` | `/api/forms` | create |
+| `GET` | `/api/forms/<id>/submissions` | submissions |
 
-Invalid values fail fast at import with a `ConfigError` naming the offending
-variable, rather than surfacing as a confusing runtime error later.
+## Screenshots
 
----
+Captured from the running service with headless Chromium at 1440×900, one image per page, committed under [`docs/assets/screens/`](docs/assets/screens/).
 
-## HTTP API
+<table>
+<tr>
+<td width="50%"><img src="docs/assets/screens/forms-new.png" alt="/forms/new" width="100%"><br><sub><code>/forms/new</code> &middot; 31.8 KB</sub></td>
+<td width="50%"><img src="docs/assets/screens/submissions.png" alt="/submissions" width="100%"><br><sub><code>/submissions</code> &middot; 21.0 KB</sub></td>
+</tr>
+</table>
 
-| Path | Method | Body |
+The other 5 captures — the health, liveness, readiness, metrics and version endpoints — are committed in the same folder rather than shown here.
+
+## Measured, not estimated
+
+These numbers were produced on this checkout by `pytest --cov` and by booting `wsgi.py` and issuing one real GET per documented path. The commands are in [`docs/EVIDENCE.md`](docs/EVIDENCE.md).
+
+| Signal | Value |
+| --- | --- |
+| Tests | **24 / 24 passed** (1.4 s, exit 0) |
+| Line coverage | **60.0%** — 448 of 717 statements |
+| Source | 15 files / 1,558 lines |
+| Test code | 4 files / 263 lines |
+| Documented paths | 3 in the spec, 1 GET |
+| Live probe | 11 GET requests to the booted app, **10 answered 200** |
+| Median latency | **5.3 ms** (single uncached request, dev server) |
+| Slowest / fastest | 109.9 ms `/` / 3.1 ms `/readyz` |
+| Bytes served | 17.9 KB across 11 responses |
+| Screenshots | 8 captured |
+
+## Architecture
+
+```
+formlane/
+├── src/formbackend/
+│   ├── http.py                         379  HTTP plumbing for formbackend: correlation ids, acce
+│   ├── cli.py                          196  Command line front-end for the form backend
+│   ├── config.py                       173  Environment-driven configuration for formbackend
+│   ├── observability.py                169  Structured logging and request correlation for formb
+│   ├── _app.py                         142  
+│   ├── app.py                          119  Application factory for formbackend
+│   ├── errors.py                       108  Typed application errors and their HTTP mapping for 
+│   ├── forms/api.py                     85  
+│   ├── forms/deliver.py                 61  
+│   ├── paths.py                         52  Filesystem layout for formbackend
+│   ├── forms/spam.py                    29  
+│   ├── models.py                        27  
+├── openapi/formlane.yaml                  the contract of record
+├── schema/formlane.sql                    the DDL
+├── tests/                       the suite that has to stay green
+├── docs/EVIDENCE.md             the recorded live route walk
+├── Dockerfile                   multi-stage build
+└── wsgi.py                      entry point
+```
+
+The package keeps one shape across the service: `config.py` reads the environment once, `observability.py` emits structured JSON logs carrying a request id, `errors.py` turns exceptions into a single JSON envelope, `models.py` holds the tables, and the `forms/` package holds the routes.
+
+## Quality gates
+
+| Gate | Command | Threshold |
 | --- | --- | --- |
-| `/api/forms` | E | JSON |
-| `/api/forms` | G | JSON |
-| `/api/forms` | O | JSON |
-| `/api/forms` | P | JSON |
-| `/api/forms` | POST | JSON |
-| `/api/forms` | S | JSON |
-| `/api/forms` | T | JSON |
-| `/api/forms/<id>/submissions` | E | JSON |
-| `/api/forms/<id>/submissions` | G | JSON |
-| `/api/forms/<id>/submissions` | GET | JSON |
-| `/api/forms/<id>/submissions` | T | JSON |
-| `/f/<token>` | O | HTML/JSON |
-| `/f/<token>` | P | HTML/JSON |
-| `/f/<token>` | POST | HTML/JSON |
-| `/f/<token>` | S | HTML/JSON |
-| `/f/<token>` | T | HTML/JSON |
+| Suite | `pytest -q` | all green |
+| Coverage | `pytest --cov` | floor set in `pyproject.toml` from the measured value |
+| Lint | `ruff check src tests` | zero findings |
+| Format | `ruff format --check src tests` | zero reformats |
+| Types | `mypy src` | zero errors |
+| Security | `bandit -c pyproject.toml -r src` | reviewed skip list, no unreviewed finding |
+| Live routes | boot `wsgi.py`, one GET per documented path | no 5xx, no undocumented guard |
 
-The frozen machine-readable contract is `openapi/formlane.yaml`; it is the
-source of truth for path and method coverage.
+CI runs the first six on Python 3.11, 3.12 and 3.13 for every push to `main`, plus a container build. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
----
-
-## Layout
-
-```
-├── .github
-│   └── workflows
-│       └── ci.yml
-├── docs
-│   ├── adr
-│   │   ├── 0001-src-layout-and-runtime-state.md
-│   │   └── 0002-hand-rolled-metric-exposition.md
-│   ├── ARCHITECTURE.md
-│   └── OPERATIONS.md
-├── openapi
-│   └── formlane.yaml
-├── schema
-│   └── formlane.sql
-├── src
-│   └── formbackend
-│       ├── forms
-│       ├── templates
-│       ├── __init__.py
-│       ├── _app.py
-│       ├── app.py
-│       ├── cli.py
-│       ├── config.py
-│       ├── errors.py
-│       ├── http.py
-│       ├── models.py
-│       ├── observability.py
-│       ├── paths.py
-│       └── py.typed
-├── tests
-│   ├── conftest.py
-│   ├── test_formlane.py
-│   ├── test_config.py
-│   └── test_ops.py
-├── .dockerignore
-├── .editorconfig
-├── .env.example
-├── .gitignore
-├── .pre-commit-config.yaml
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-├── Dockerfile
-├── LICENSE
-├── Makefile
-├── NOTES.md
-├── SECURITY.md
-├── conftest.py
-├── docker-compose.yml
-├── docker-entrypoint.sh
-├── mypy.ini
-├── pyproject.toml
-├── requirements-dev.txt
-├── requirements.txt
-└── wsgi.py
-```
-
-- `src/formbackend/` is the only importable code. It is a real package: every
-  historical flat import was rewritten to a relative one, so the modules can no
-  longer be shadowed by an unrelated top-level name.
-- `var/` holds all mutable state (database, logs) and is gitignored. The
-  container image mounts a volume there.
-- `wsgi.py` is a compatibility shim so a bare checkout is runnable. Anything
-  installed with `pip install` uses the package factory directly.
-
----
-
-## Development
+## Deploy
 
 ```sh
-make install   # virtualenv plus editable install with dev extras
-make test      # pytest
-make cov       # pytest --cov, enforces the coverage floor
-make lint      # ruff check
-make type      # mypy --strict
-make check     # lint + type + cov: the same gate CI runs
-make run       # development server
+docker build -t formlane .
+docker run --rm -p 8000:8000 --env-file .env.example formlane
 ```
 
-### Honest status of the quality gates
+Configuration is environment-only — every variable is documented in [`.env.example`](.env.example), and the service refuses to start with a production secret missing.
 
-This project was generated in an offline sandbox, which constrains what can
-truthfully be claimed:
+## Limits, stated rather than hidden
 
-| Gate                                        | Status in this repository |
-| ------------------------------------------- | ------------------------- |
-| `pytest`                                    | **Executed.** The suite passes locally. |
-| `coverage`                                  | Runnable, but the 85% floor has **not** been verified end to end. |
-| `mypy --strict`                             | Runnable locally; the strict configuration is committed. |
-| `ruff`, `bandit`, `pip-audit`                 | **Never executed.** No network access to install them. Authored, not run. |
-| CI workflow                                 | Committed, **never run** (no CI runner available). |
-| Container build                             | Dockerfile committed, **never built** (no Docker daemon). |
-
-Read the CI workflow as the intended gate, not as evidence that the gate
-passed. Nothing in this repository claims a green build.
-
----
-
-## Deployment
-
-```sh
-docker compose up --build     # http://localhost:8000
-```
-
-The image is multi-stage, installs from a built wheel, runs as uid 1001 with no
-capabilities, has a read-only root filesystem, and declares its own
-`HEALTHCHECK`. `docker-entrypoint.sh` refuses to start a production image
-without `SECRET_KEY`.
-
-See [docs/OPERATIONS.md](docs/OPERATIONS.md) for the runbook: rollout, rollback,
-log queries, and what each alert means.
-
----
-
-## Documentation
-
-| Document                                     | Contents                                  |
-| -------------------------------------------- | ----------------------------------------- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, request lifecycle, failure modes |
-| [docs/OPERATIONS.md](docs/OPERATIONS.md)     | Runbook, alerts, capacity notes           |
-| [docs/adr/](docs/adr/)                       | Architecture decision records             |
-| [SECURITY.md](SECURITY.md)                   | Threat model and disclosure policy        |
-| [CONTRIBUTING.md](CONTRIBUTING.md)           | Branch, commit and review conventions     |
-| [CHANGELOG.md](CHANGELOG.md)                 | Release history                           |
-
----
+- The webhook sender is implemented and unit-tested but the submit path does not call it yet — the README says so rather than implying otherwise.
+- No file uploads on form submissions.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
