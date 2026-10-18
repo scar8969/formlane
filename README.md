@@ -1,4 +1,4 @@
-# formbackend
+# formlane
 
 > A self-hosted backend for HTML forms. You create a form in the web UI (or over the API) and get a
 
@@ -6,8 +6,8 @@
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](pyproject.toml)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-b8_formbackend is a Flask service delivered as an installable, typed, test-covered
-distribution. The business logic is unchanged from the original skeleton; what
+formlane is a Flask service delivered as an installable, typed, test-covered
+distribution. The business logic is unchanged from the original service; what
 is new is the engineering around it: a packaging story, a configuration
 contract, structured observability, operational endpoints, a hardened
 container, and the gates that keep all of that true.
@@ -17,7 +17,7 @@ container, and the gates that keep all of that true.
 ## Quickstart
 
 ```sh
-git clone <your-fork> b8_formbackend && cd b8_formbackend
+git clone <your-fork> formlane && cd formlane
 python -m venv .venv
 . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
@@ -127,7 +127,7 @@ variable, rather than surfacing as a confusing runtime error later.
 | `/f/<token>` | S | HTML/JSON |
 | `/f/<token>` | T | HTML/JSON |
 
-The frozen machine-readable contract is `openapi/b8_formbackend.yaml`; it is the
+The frozen machine-readable contract is `openapi/formlane.yaml`; it is the
 source of truth for path and method coverage.
 
 ---
@@ -145,9 +145,9 @@ source of truth for path and method coverage.
 │   ├── ARCHITECTURE.md
 │   └── OPERATIONS.md
 ├── openapi
-│   └── b8_formbackend.yaml
+│   └── formlane.yaml
 ├── schema
-│   └── b8_formbackend.sql
+│   └── formlane.sql
 ├── src
 │   └── formbackend
 │       ├── forms
@@ -165,7 +165,7 @@ source of truth for path and method coverage.
 │       └── py.typed
 ├── tests
 │   ├── conftest.py
-│   ├── test_b8_formbackend.py
+│   ├── test_formlane.py
 │   ├── test_config.py
 │   └── test_ops.py
 ├── .dockerignore

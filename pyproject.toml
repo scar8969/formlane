@@ -3,13 +3,13 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "b8-formbackend"
+name = "formlane"
 version = "0.1.0"
-description = "A self-hosted backend for HTML forms. You create a form in the web UI (or over the API) and get a"
+description = "Backend for HTML forms: create a form, get a POST endpoint, collect and export submissions."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "project-skeletons maintainers" }]
+authors = [{ name = "Priyanshu Rout" }]
 keywords = ["flask", "service", "formbackend"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -46,7 +46,7 @@ Documentation = "https://example.invalid/formbackend/docs"
 Issues = "https://example.invalid/formbackend/issues"
 
 [project.scripts]
-b8-formbackend = "formbackend.cli:main"
+formlane = "formbackend.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

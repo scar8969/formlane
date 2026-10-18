@@ -1,4 +1,4 @@
-"""B8 formbackend — tests. Run: pytest test_b8_formbackend.py"""
+"""B8 formbackend — tests. Run: pytest test_formlane.py"""
 import sys, os, json
 
 import pytest
