@@ -15,7 +15,6 @@ paths:
       responses:
         "200":
           description: ok
-  /api/forms:
     post:
       summary: create
       responses:

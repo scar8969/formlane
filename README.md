@@ -51,7 +51,7 @@ Commands: `forms`, `create`, `submissions`, `test`, `serve`.
 A first request:
 
 ```sh
-curl -s http://127.0.0.1:8000/f/<token> | head
+curl -s http://127.0.0.1:8000/api/forms | head
 ```
 
 ## Requirements
@@ -67,6 +67,7 @@ Every route below is in [`openapi/formlane.yaml`](openapi/formlane.yaml) and is 
 | Method | Path | What it does |
 | --- | --- | --- |
 | `POST` | `/f/<token>` | submit |
+| `GET` | `/api/forms` | list |
 | `POST` | `/api/forms` | create |
 | `GET` | `/api/forms/<id>/submissions` | submissions |
 
@@ -89,11 +90,11 @@ These numbers were produced on this checkout by `pytest --cov` and by booting `w
 
 | Signal | Value |
 | --- | --- |
-| Tests | **24 / 24 passed** (1.4 s, exit 0) |
+| Tests | **24 / 24 passed** (1.5 s, exit 0) |
 | Line coverage | **60.0%** — 448 of 717 statements |
 | Source | 15 files / 1,558 lines |
 | Test code | 4 files / 263 lines |
-| Documented paths | 3 in the spec, 1 GET |
+| Documented paths | 3 in the spec, 2 GET |
 | Live probe | 11 GET requests to the booted app, **10 answered 200** |
 | Median latency | **5.3 ms** (single uncached request, dev server) |
 | Slowest / fastest | 109.9 ms `/` / 3.1 ms `/readyz` |
