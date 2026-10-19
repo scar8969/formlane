@@ -4,7 +4,7 @@ Every line below was produced by a command run against this exact checkout, on t
 
 | | |
 | --- | --- |
-| Generated | 2026-10-19 02:59 |
+| Generated | 2026-10-19 09:42 |
 | Python | 3.14.7 |
 | Platform | Windows 11 |
 
@@ -15,7 +15,7 @@ python -m pytest -q
 ```
 
 - exit code **0**
-- 24 passed in 1.58s
+- 24 passed in 1.45s
 
 ## Static gates
 
@@ -36,6 +36,25 @@ The application was imported through `wsgi.py` and each GET path declared in `op
 | 200 | `/api/forms/1/submissions` | 19 | application/json |
 
 2 paths walked, 0 of them raised or answered 5xx.
+
+## CLI
+
+```
+usage: formbackend [-h] command ...
+
+Form backend CLI
+
+positional arguments:
+  command
+    forms        list forms with submission counts
+    create       create a form endpoint
+    submissions  show recent submissions for a form
+    test         post a sample submission to a form token
+    serve        run the development server
+
+options:
+  -h, --help     show this help message and exit
+```
 
 ## Screenshots
 
