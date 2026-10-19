@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from flask_sqlalchemy import SQLAlchemy
+
+from .clock import utcnow
 
 db = SQLAlchemy()
 
@@ -12,7 +12,7 @@ class Form(db.Model):
     name = db.Column(db.String(64), default="")
     deliver_json = db.Column(db.Text, default="{}")
     spam_json = db.Column(db.Text, default="{}")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class Submission(db.Model):
@@ -23,4 +23,4 @@ class Submission(db.Model):
     ip = db.Column(db.String(64), default="")
     spam = db.Column(db.Integer, default=0)
     delivered = db.Column(db.Integer, default=0)
-    at = db.Column(db.DateTime, default=datetime.utcnow)
+    at = db.Column(db.DateTime, default=utcnow)

@@ -123,7 +123,7 @@ Produced on this checkout by `pytest --cov` and by booting `wsgi.py` and issuing
 | --- | --- |
 | Tests | **24 / 24 passed** (1.5 s, exit 0) |
 | Line coverage | **60.0%** — 448 of 717 statements |
-| Source | 15 files / 1,561 lines |
+| Source | 15 files / 1,579 lines |
 | Test code | 4 files / 263 lines |
 | Documented paths | 3 in the spec, 2 GET |
 | Live probe | 11 GET requests to the booted app, **10 answered 200** |
